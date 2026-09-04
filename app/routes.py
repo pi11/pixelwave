@@ -11,7 +11,8 @@ from tortoise.functions import Count
 from tortoise.transactions import in_transaction
 
 from app.auth import require_admin, valid_credentials
-from app.jamendo import JamendoError, next_track, refresh_radio
+from app.catalog import ERRORS as CATALOG_ERRORS
+from app.catalog import next_track, refresh_radio
 from app.models import Radio, Track, TrackVote
 from app.ratings import wilson_score
 
@@ -44,13 +45,14 @@ async def radio_next(slug: str):
         raise HTTPException(404, "Radio not found")
     try:
         track = await next_track(radio)
-    except (JamendoError, httpx.HTTPError) as exc:
+    except (*CATALOG_ERRORS, httpx.HTTPError) as exc:
         raise HTTPException(502, str(exc)) from exc
     if not track:
         raise HTTPException(503, "No tracks available for this radio")
     return JSONResponse(
         {
-            "id": track.jamendo_id,
+            "id": track.id,
+            "provider": track.provider,
             "name": track.name,
             "artist": track.artist_name,
             "album": track.album_name,
@@ -66,8 +68,8 @@ async def radio_next(slug: str):
     )
 
 
-@router.post("/api/tracks/{jamendo_id}/vote")
-async def vote_track(request: Request, jamendo_id: int, vote: VoteInput):
+@router.post("/api/tracks/{track_id}/vote")
+async def vote_track(request: Request, track_id: int, vote: VoteInput):
     raw_voter_id = request.cookies.get("pixelwave_voter")
     try:
         voter_id = UUID(raw_voter_id) if raw_voter_id else uuid4()
@@ -75,7 +77,7 @@ async def vote_track(request: Request, jamendo_id: int, vote: VoteInput):
         voter_id = uuid4()
 
     async with in_transaction():
-        track = await Track.filter(jamendo_id=jamendo_id).select_for_update().first()
+        track = await Track.filter(id=track_id).select_for_update().first()
         if not track:
             raise HTTPException(404, "Track not found")
         existing = await TrackVote.get_or_none(track_id=track.id, voter_id=voter_id)
@@ -199,6 +201,7 @@ async def edit_radio(
         await radio.tracks.clear()
         radio.last_synced_at = None
         radio.sync_offset = 0
+        radio.audius_sync_offset = 0
     await radio.save()
     return RedirectResponse("/admin", status_code=303)
 

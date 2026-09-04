@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     app_name: str = "Pixelwave Radio"
     database_url: str = "postgres://pradio@localhost:5432/pradio"
     jamendo_client_id: str
+    audius_api_key: str = ""
     secret_key: str
     admin_username: str = "admin"
     admin_password: str

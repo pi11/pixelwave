@@ -1,9 +1,7 @@
 from datetime import UTC, datetime, timedelta
 from math import ceil
-from random import randrange
 
 import httpx
-from tortoise.expressions import F
 
 from app.config import settings
 from app.models import Radio, Track
@@ -16,23 +14,24 @@ class JamendoError(RuntimeError):
 
 
 async def refresh_radio(radio: Radio, *, force: bool = False) -> int:
+    cache_target = max(1, (settings.track_cache_target + 1) // 2)
     if radio.instrumental:
         cached_non_instrumentals = [
             track
-            for track in await radio.tracks.all()
+            for track in await radio.tracks.filter(provider="jamendo")
             if not _is_instrumental(track.raw_data)
         ]
         if cached_non_instrumentals:
             await radio.tracks.remove(*cached_non_instrumentals)
 
-    count = await radio.tracks.all().count()
+    count = await radio.tracks.filter(provider="jamendo").count()
     fresh_after = datetime.now(UTC) - timedelta(hours=settings.track_cache_ttl_hours)
     if not force and radio.last_synced_at:
         synced = radio.last_synced_at
         if synced.tzinfo is None:
             synced = synced.replace(tzinfo=UTC)
         cache_full_or_catalog_exhausted = (
-            count >= settings.track_cache_target or radio.sync_offset == 0
+            count >= cache_target or radio.sync_offset == 0
         )
         if synced >= fresh_after and cache_full_or_catalog_exhausted:
             return count
@@ -51,9 +50,9 @@ async def refresh_radio(radio: Radio, *, force: bool = False) -> int:
     if radio.instrumental:
         base_params["vocalinstrumental"] = "instrumental"
 
-    missing = max(0, settings.track_cache_target - count)
+    missing = max(0, cache_target - count)
     pages = max(settings.refresh_pages, ceil(missing / settings.jamendo_page_size))
-    pages = min(pages, ceil(settings.track_cache_target / settings.jamendo_page_size))
+    pages = min(pages, ceil(cache_target / settings.jamendo_page_size))
     offset = radio.sync_offset
     async with httpx.AsyncClient(timeout=20, follow_redirects=True) as client:
         for _ in range(pages):
@@ -72,7 +71,9 @@ async def refresh_radio(radio: Radio, *, force: bool = False) -> int:
                 if radio.instrumental and not _is_instrumental(item):
                     continue
                 track, _ = await Track.update_or_create(
-                    jamendo_id=int(item["id"]), defaults=_track_defaults(item)
+                    provider="jamendo",
+                    source_id=str(item["id"]),
+                    defaults={"jamendo_id": int(item["id"]), **_track_defaults(item)},
                 )
                 await radio.tracks.add(track)
             offset += len(results)
@@ -80,16 +81,18 @@ async def refresh_radio(radio: Radio, *, force: bool = False) -> int:
                 offset = 0
                 break
 
-    count = await radio.tracks.all().count()
-    if count > settings.track_cache_target:
-        overflow = count - settings.track_cache_target
-        stale = await radio.tracks.all().order_by("fetched_at").limit(overflow)
+    count = await radio.tracks.filter(provider="jamendo").count()
+    if count > cache_target:
+        overflow = count - cache_target
+        stale = (
+            await radio.tracks.filter(provider="jamendo").order_by("fetched_at").limit(overflow)
+        )
         await radio.tracks.remove(*stale)
 
     radio.last_synced_at = datetime.now(UTC)
     radio.sync_offset = offset
     await radio.save(update_fields=["last_synced_at", "sync_offset"])
-    return await radio.tracks.all().count()
+    return await radio.tracks.filter(provider="jamendo").count()
 
 
 def _is_instrumental(item: dict) -> bool:
@@ -114,17 +117,3 @@ def _track_defaults(item: dict) -> dict:
         "download_allowed": bool(item.get("audiodownload_allowed", False)),
         "raw_data": item,
     }
-
-
-async def next_track(radio: Radio) -> Track | None:
-    await refresh_radio(radio)
-    query = radio.tracks.all()
-    count = await query.count()
-    if not count:
-        return None
-    track = await query.offset(randrange(count)).first()
-    if track:
-        await Track.filter(id=track.id).update(
-            play_count=F("play_count") + 1, last_played_at=datetime.now(UTC)
-        )
-    return track

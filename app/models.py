@@ -12,6 +12,7 @@ class Radio(models.Model):
     enabled = fields.BooleanField(default=True)
     last_synced_at = fields.DatetimeField(null=True)
     sync_offset = fields.IntField(default=0)
+    audius_sync_offset = fields.IntField(default=0)
     created_at = fields.DatetimeField(auto_now_add=True)
     updated_at = fields.DatetimeField(auto_now=True)
 
@@ -23,7 +24,9 @@ class Radio(models.Model):
 
 class Track(models.Model):
     id = fields.IntField(primary_key=True)
-    jamendo_id = fields.BigIntField(unique=True, db_index=True)
+    jamendo_id = fields.BigIntField(unique=True, db_index=True, null=True)
+    provider = fields.CharField(max_length=20, default="jamendo")
+    source_id = fields.CharField(max_length=100, db_index=True)
     name = fields.CharField(max_length=300)
     artist_id = fields.BigIntField(null=True)
     artist_name = fields.CharField(max_length=300)
@@ -50,6 +53,7 @@ class Track(models.Model):
 
     class Meta:
         table = "tracks"
+        unique_together = (("provider", "source_id"),)
 
 
 class TrackVote(models.Model):

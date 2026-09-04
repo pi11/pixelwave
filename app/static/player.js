@@ -15,7 +15,7 @@ async function loadTrack(autoplay = true) {
     audio.src = track.audio;
     $("track-name").textContent = track.name;
     $("artist").textContent = track.artist;
-    $("artist").href = track.share_url || "https://www.jamendo.com";
+    $("artist").href = track.share_url || (track.provider === "audius" ? "https://audius.co" : "https://www.jamendo.com");
     $("cover").src = track.image;
     $("license").href = track.license_url || "https://creativecommons.org";
     $("like").querySelector("span").textContent = track.likes;

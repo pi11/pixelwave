@@ -1,3 +1,6 @@
+from app import catalog
+from app.audius import _is_instrumental as is_audius_instrumental
+from app.audius import _license_url, _matches_speed
 from app.auth import valid_credentials
 from app.config import settings
 from app.jamendo import _is_instrumental
@@ -26,7 +29,7 @@ def test_core_routes_are_registered():
     assert "/api/radios/{slug}/next" in paths
     assert "/admin" in paths
     assert "/health" in paths
-    assert "/api/tracks/{jamendo_id}/vote" in paths
+    assert "/api/tracks/{track_id}/vote" in paths
 
 
 def test_wilson_score_rewards_confident_positive_votes():
@@ -40,3 +43,41 @@ def test_instrumental_track_classification_is_strict():
     assert not _is_instrumental({"musicinfo": {"vocalinstrumental": "vocal"}})
     assert not _is_instrumental({"musicinfo": {}})
     assert not _is_instrumental({})
+
+
+def test_audius_filters_are_strict():
+    assert is_audius_instrumental({"tags": "Electronic, Instrumental"})
+    assert not is_audius_instrumental({"tags": "Electronic, Vocal"})
+    assert _matches_speed({"bpm": 100}, ["medium"])
+    assert not _matches_speed({}, ["medium"])
+
+
+def test_audius_license_is_always_a_link():
+    assert _license_url({"license": "CC-BY"}) == "https://creativecommons.org/licenses/by/4.0/"
+    assert _license_url({}).startswith("https://audius.org/")
+
+
+async def test_catalog_refreshes_all_providers(monkeypatch):
+    calls = []
+
+    async def refresh_jamendo(radio, *, force=False):
+        calls.append(("jamendo", force))
+
+    async def refresh_audius(radio, *, force=False):
+        calls.append(("audius", force))
+
+    class Tracks:
+        def all(self):
+            return self
+
+        async def count(self):
+            return 2
+
+    class Radio:
+        tracks = Tracks()
+
+    monkeypatch.setattr(catalog.jamendo, "refresh_radio", refresh_jamendo)
+    monkeypatch.setattr(catalog.audius, "refresh_radio", refresh_audius)
+
+    assert await catalog.refresh_radio(Radio(), force=True) == 2
+    assert calls == [("jamendo", True), ("audius", True)]
