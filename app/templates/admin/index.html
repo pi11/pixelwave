@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Control room · Pixelwave Radio{% endblock %}
 {% block robots %}noindex,nofollow{% endblock %}
-{% block nav %}<form method="post" action="/admin/logout"><button class="link">Log out</button></form>{% endblock %}
+{% block nav %}<form method="post" action="/admin/logout"><button class="link"><svg><use href="/static/nav-icons.svg?v=1#logout"></use></svg>LOG OUT</button></form>{% endblock %}
 {% block content %}
 <section class="admin-head"><div><p class="eyebrow">CONTROL ROOM</p><h1>Stations</h1></div></section>
 <section class="admin-grid">

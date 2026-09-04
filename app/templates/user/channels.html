@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Public Programming Music Channels · Pixelwave Radio{% endblock %}
 {% block description %}Discover public programming music channels created by the Pixelwave community for coding and focus.{% endblock %}
-{% block nav %}<span class="user-nav"><a href="/">MAIN RADIO</a><a href="/user-channels">PUBLIC CHANNELS</a>{% if user %}<a href="/profile">PROFILE</a><form method="post" action="/logout"><button class="link">LOG OUT</button></form>{% else %}<a href="/login">LOG IN</a>{% endif %}</span>{% endblock %}
+{% block nav %}<span class="user-nav"><a href="/"><svg><use href="/static/nav-icons.svg?v=1#radio"></use></svg>MAIN RADIO</a><a href="/user-channels"><svg><use href="/static/nav-icons.svg?v=1#channels"></use></svg>PUBLIC CHANNELS</a>{% if user %}<a href="/profile"><svg><use href="/static/nav-icons.svg?v=1#profile"></use></svg>PROFILE</a><form method="post" action="/logout"><button class="link"><svg><use href="/static/nav-icons.svg?v=1#logout"></use></svg>LOG OUT</button></form>{% else %}<a href="/login"><svg><use href="/static/nav-icons.svg?v=1#login"></use></svg>LOG IN</a>{% endif %}</span>{% endblock %}
 {% block content %}
 <section class="admin-head"><div><p class="eyebrow">COMMUNITY SIGNALS</p><h1>Public channels</h1><p class="muted">Public programming radio channels created by listeners.</p></div></section>
 <section class="user-channel-grid">

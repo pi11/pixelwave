@@ -2,7 +2,7 @@
 {% block title %}{{ radio.name }} Programming Music Channel · Pixelwave Radio{% endblock %}
 {% block description %}Listen to {{ radio.name }}, a programming music channel for coding and focus featuring {{ radio.tags | join(', ') }}.{% endblock %}
 {% block robots %}{% if radio.visibility == 'hidden' %}noindex,nofollow{% else %}index,follow,max-image-preview:large{% endif %}{% endblock %}
-{% block nav %}<span class="user-nav"><a href="/">MAIN RADIO</a><a href="/user-channels">PUBLIC CHANNELS</a>{% if user %}<a href="/profile">PROFILE</a><form method="post" action="/logout"><button class="link">LOG OUT</button></form>{% else %}<a href="/login">LOG IN</a>{% endif %}</span>{% endblock %}
+{% block nav %}<span class="user-nav"><a href="/"><svg><use href="/static/nav-icons.svg?v=1#radio"></use></svg>MAIN RADIO</a><a href="/user-channels"><svg><use href="/static/nav-icons.svg?v=1#channels"></use></svg>PUBLIC CHANNELS</a>{% if user %}<a href="/profile"><svg><use href="/static/nav-icons.svg?v=1#profile"></use></svg>PROFILE</a><form method="post" action="/logout"><button class="link"><svg><use href="/static/nav-icons.svg?v=1#logout"></use></svg>LOG OUT</button></form>{% else %}<a href="/login"><svg><use href="/static/nav-icons.svg?v=1#login"></use></svg>LOG IN</a>{% endif %}</span>{% endblock %}
 {% block content %}
 <section class="channel-detail">
   <p class="eyebrow">{% if radio.owner_id %}USER CHANNEL // {{ radio.visibility | upper }}{% else %}PIXELWAVE CHANNEL{% endif %}</p>

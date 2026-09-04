@@ -16,7 +16,7 @@
 }
 </script>
 {% endblock %}
-{% block nav %}<span class="user-nav"><a href="/user-channels">PUBLIC CHANNELS</a>{% if user %}<a href="/profile">PROFILE</a><form method="post" action="/logout"><button class="link">LOG OUT</button></form>{% else %}<a href="/login">LOG IN</a>{% endif %}</span>{% endblock %}
+{% block nav %}<span class="user-nav"><a href="/user-channels"><svg><use href="/static/nav-icons.svg?v=1#channels"></use></svg>PUBLIC CHANNELS</a>{% if user %}<a href="/profile"><svg><use href="/static/nav-icons.svg?v=1#profile"></use></svg>PROFILE</a><form method="post" action="/logout"><button class="link"><svg><use href="/static/nav-icons.svg?v=1#logout"></use></svg>LOG OUT</button></form>{% else %}<a href="/login"><svg><use href="/static/nav-icons.svg?v=1#login"></use></svg>LOG IN</a>{% endif %}</span>{% endblock %}
 {% block content %}
 <section class="hero">
   <div class="terminal-line"><span>pixelwave@radio:~$</span> tune --focus</div>

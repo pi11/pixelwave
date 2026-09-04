@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block robots %}noindex,nofollow{% endblock %}
 {% block title %}Your profile and channels · Pixelwave Radio{% endblock %}
-{% block nav %}<span class="user-nav"><a href="/">MAIN RADIO</a><a href="/user-channels">PUBLIC CHANNELS</a><a href="/profile">PROFILE</a><form method="post" action="/logout"><button class="link">LOG OUT</button></form></span>{% endblock %}
+{% block nav %}<span class="user-nav"><a href="/"><svg><use href="/static/nav-icons.svg?v=1#radio"></use></svg>MAIN RADIO</a><a href="/user-channels"><svg><use href="/static/nav-icons.svg?v=1#channels"></use></svg>PUBLIC CHANNELS</a><a href="/profile"><svg><use href="/static/nav-icons.svg?v=1#profile"></use></svg>PROFILE</a><form method="post" action="/logout"><button class="link"><svg><use href="/static/nav-icons.svg?v=1#logout"></use></svg>LOG OUT</button></form></span>{% endblock %}
 {% block content %}
 <section class="admin-head"><div><p class="eyebrow">USER PROFILE</p><h1>{{ user.display_name }}</h1><p class="muted">Manage your username, Favorites, and personal channels.</p></div></section>
 <section class="profile-bar panel"><form method="post" action="/profile"><label>Username<input name="display_name" value="{{ user.display_name }}" maxlength="100" required></label><button class="primary">Update username</button></form></section>

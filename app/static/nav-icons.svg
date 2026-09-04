@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg">
+  <symbol id="radio" viewBox="0 0 24 24"><path d="M4 10h16v10H4zM7 7l10-3M8 14h8M8 17h5"/></symbol>
+  <symbol id="channels" viewBox="0 0 24 24"><circle cx="6" cy="12" r="2"/><circle cx="18" cy="7" r="2"/><circle cx="18" cy="17" r="2"/><path d="M8 11l8-3M8 13l8 3"/></symbol>
+  <symbol id="profile" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3"/><path d="M5 20c.7-4 3-6 7-6s6.3 2 7 6"/></symbol>
+  <symbol id="login" viewBox="0 0 24 24"><path d="M13 5h6v14h-6M4 12h11M11 8l4 4-4 4"/></symbol>
+  <symbol id="logout" viewBox="0 0 24 24"><path d="M11 5H5v14h6M20 12H9M16 8l4 4-4 4"/></symbol>
+</svg>
