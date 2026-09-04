@@ -17,7 +17,7 @@ from app.catalog import next_track, refresh_radio
 from app.config import settings
 from app.models import Radio, Track, TrackVote
 from app.ratings import wilson_score
-from app.user_auth import current_user
+from app.user_auth import current_user, favorites_radio
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
@@ -122,6 +122,13 @@ async def vote_track(request: Request, track_id: int, vote: VoteInput):
         elif not existing:
             await TrackVote.create(track_id=track.id, voter_id=voter_id, value=vote.value)
         else:
+            user = await current_user(request)
+            if user:
+                favorites = await favorites_radio(user)
+                if vote.value == 1:
+                    await favorites.tracks.add(track)
+                else:
+                    await favorites.tracks.remove(track)
             return _vote_response(track, voter_id, vote.value)
 
         if vote.value == 1:
@@ -129,6 +136,13 @@ async def vote_track(request: Request, track_id: int, vote: VoteInput):
         else:
             track.dislikes += 1
         await track.save(update_fields=["likes", "dislikes"])
+    user = await current_user(request)
+    if user:
+        favorites = await favorites_radio(user)
+        if vote.value == 1:
+            await favorites.tracks.add(track)
+        else:
+            await favorites.tracks.remove(track)
     return _vote_response(track, voter_id, vote.value)
 
 

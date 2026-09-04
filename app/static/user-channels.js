@@ -3,7 +3,11 @@ document.querySelectorAll("[data-channel-vote]").forEach((button) => {
     const rating = button.closest(".channel-rating");
     const value = Number(button.dataset.channelVote);
     const response = await fetch(`/api/radios/${rating.dataset.radioId}/vote?value=${value}`, {method: "POST"});
-    if (!response.ok) return;
+    if (!response.ok) {
+      rating.dataset.error = "Vote failed";
+      return;
+    }
+    delete rating.dataset.error;
     const result = await response.json();
     const buttons = rating.querySelectorAll("[data-channel-vote]");
     buttons[0].querySelector("span").textContent = result.likes;

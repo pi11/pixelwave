@@ -18,7 +18,7 @@ from app.config import settings
 from app.models import LoginToken, Radio, RadioVote, User
 from app.ratings import wilson_score
 from app.routes import _slug, _words
-from app.user_auth import current_user, hash_login_token
+from app.user_auth import current_user, favorites_radio, hash_login_token
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
@@ -102,10 +102,17 @@ async def telegram_webhook(request: Request):
     display_name = " ".join(
         value for value in (sender.get("first_name"), sender.get("last_name")) if value
     ) or sender.get("username") or f"Telegram user {sender['id']}"
-    user, _ = await User.update_or_create(
-        telegram_id=sender["id"],
-        defaults={"username": sender.get("username") or "", "display_name": display_name},
-    )
+    user = await User.get_or_none(telegram_id=sender["id"])
+    if user:
+        user.username = sender.get("username") or ""
+        await user.save(update_fields=["username", "updated_at"])
+    else:
+        user = await User.create(
+            telegram_id=sender["id"],
+            username=sender.get("username") or "",
+            display_name=display_name,
+        )
+    await favorites_radio(user)
     raw_token = secrets.token_urlsafe(32)
     await LoginToken.create(
         user=user,
@@ -125,6 +132,7 @@ async def telegram_webhook(request: Request):
 @router.get("/user-channels", response_class=HTMLResponse)
 async def user_channels(request: Request):
     user = await current_user(request)
+    favorites = await favorites_radio(user) if user else None
     access = Q(visibility="public")
     if user:
         access |= Q(owner_id=user.id)
@@ -148,8 +156,21 @@ async def user_channels(request: Request):
     return templates.TemplateResponse(
         request,
         "user/channels.html",
-        {"radios": radios, "user": user},
+        {"radios": radios, "user": user, "favorites": favorites},
     )
+
+
+@router.post("/profile")
+async def edit_profile(request: Request, display_name: str = Form()):
+    user = await current_user(request)
+    if not user:
+        raise HTTPException(401, "Log in with Telegram")
+    display_name = display_name.strip()
+    if not display_name or len(display_name) > 100:
+        raise HTTPException(400, "Username must be between 1 and 100 characters")
+    user.display_name = display_name
+    await user.save(update_fields=["display_name", "updated_at"])
+    return RedirectResponse("/user-channels", status_code=303)
 
 
 @router.post("/user-channels")
@@ -197,7 +218,9 @@ async def edit_user_channel(
     instrumental: bool = Form(False),
     visibility: Literal["public", "hidden"] = Form("hidden"),
 ):
-    _, radio = await _owned_radio(request, radio_id)
+    user, radio = await _owned_radio(request, radio_id)
+    if radio.id == (await favorites_radio(user)).id:
+        raise HTTPException(403, "Favorites is managed by track likes")
     parsed_tags = _words(tags)
     if not parsed_tags or not _slug(name):
         raise HTTPException(400, "A valid name and at least one tag are required")
@@ -221,13 +244,17 @@ async def edit_user_channel(
 
 @router.post("/user-channels/{radio_id}/delete")
 async def delete_user_channel(request: Request, radio_id: int):
-    _, radio = await _owned_radio(request, radio_id)
+    user, radio = await _owned_radio(request, radio_id)
+    if radio.id == (await favorites_radio(user)).id:
+        raise HTTPException(403, "Favorites cannot be deleted")
     await radio.delete()
     return RedirectResponse("/user-channels", status_code=303)
 
 
 @router.post("/api/radios/{radio_id}/vote")
-async def vote_radio(request: Request, radio_id: int, value: Literal[-1, 1]):
+async def vote_radio(request: Request, radio_id: int, value: int):
+    if value not in (-1, 1):
+        raise HTTPException(422, "Vote must be -1 or 1")
     user = await current_user(request)
     radio = await Radio.get_or_none(id=radio_id, owner_id__not_isnull=True)
     if not radio or (radio.visibility == "hidden" and (not user or radio.owner_id != user.id)):

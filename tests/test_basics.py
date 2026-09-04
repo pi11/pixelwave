@@ -1,3 +1,6 @@
+import pytest
+from fastapi import HTTPException
+
 from app import catalog
 from app.audius import _is_instrumental as is_audius_instrumental
 from app.audius import _license_url, _matches_speed
@@ -9,6 +12,7 @@ from app.ratings import wilson_score
 from app.routes import _slug, _words, router
 from app.user_auth import hash_login_token
 from app.user_routes import router as user_router
+from app.user_routes import vote_radio
 
 
 def test_tag_normalization():
@@ -37,6 +41,7 @@ def test_core_routes_are_registered():
     assert "/user-channels" in user_paths
     assert "/telegram/webhook" in user_paths
     assert "/api/radios/{radio_id}/vote" in user_paths
+    assert "/profile" in user_paths
 
 
 def test_login_tokens_are_hashed_deterministically():
@@ -95,3 +100,9 @@ async def test_catalog_refreshes_all_providers(monkeypatch):
 
     assert await catalog.refresh_radio(Radio(), force=True) == 2
     assert calls == [("jamendo", True), ("audius", True)]
+
+
+async def test_channel_vote_rejects_invalid_values_before_database_access():
+    with pytest.raises(HTTPException) as error:
+        await vote_radio(None, 1, 0)
+    assert error.value.status_code == 422
