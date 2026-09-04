@@ -11,6 +11,7 @@
     <span class="station-top"><span class="station-number">{{ radio.visibility | upper }}</span><i></i></span><strong>{{ radio.name }}</strong><small>{{ radio.description }}</small>
     <span class="tags">{% for tag in radio.tags %}#{{ tag }} {% endfor %}</span>
   </button>
+  <a class="channel-link" href="/channels/{{ radio.slug }}">OPEN / SHARE CHANNEL →</a>
   <p class="muted">By {{ radio.owner.display_name }} · {{ radio.track_count }} tracks (Jamendo {{ radio.jamendo_track_count }}, Audius {{ radio.audius_track_count }})</p>
   <div class="channel-rating" data-radio-id="{{ radio.id }}"><button data-channel-vote="1">+ <span>{{ radio.likes }}</span></button><button data-channel-vote="-1">− <span>{{ radio.dislikes }}</span></button><span>Rating <strong>{{ '%.3f' | format(radio.overall_rating) }}</strong></span></div>
   {% if user and radio.owner_id == user.id %}
@@ -35,4 +36,4 @@
 {% else %}<section class="panel narrow"><h2>Create your channel</h2><p class="muted">Log in through Telegram to create public or private programming radio channels.</p><a class="button primary" href="/login">LOG IN WITH TELEGRAM</a></section>{% endif %}
 <section class="player" id="player" hidden><img id="cover" alt="Album cover"><div class="track-copy"><span id="station-name"></span><strong id="track-name">Select a station</strong><a id="artist" target="_blank" rel="noopener"></a></div><button id="toggle" aria-label="Play or pause">▶</button><button id="next" aria-label="Next track">NEXT</button><div class="votes"><button id="like">+ <span>0</span></button><button id="dislike">− <span>0</span></button></div><input id="volume" aria-label="Volume" type="range" min="0" max="1" step="0.05" value="0.8"><a id="license" target="_blank" rel="noopener">LICENSE</a></section>
 {% endblock %}
-{% block scripts %}<script src="/static/player.js"></script><script src="/static/user-channels.js"></script>{% endblock %}
+{% block scripts %}<script src="/static/player.js?v=20260905"></script><script src="/static/user-channels.js?v=20260905"></script>{% endblock %}

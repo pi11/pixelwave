@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}{{ radio.name }} Programming Music Channel · Pixelwave Radio{% endblock %}
+{% block description %}Listen to {{ radio.name }}, a programming music channel for coding and focus featuring {{ radio.tags | join(', ') }}.{% endblock %}
+{% block robots %}{% if radio.visibility == 'hidden' %}noindex,nofollow{% else %}index,follow,max-image-preview:large{% endif %}{% endblock %}
+{% block nav %}<span class="user-nav"><a href="/">MAIN RADIO</a><a href="/user-channels">USER CHANNELS</a>{% if user %}<form method="post" action="/logout"><button class="link">LOG OUT</button></form>{% else %}<a href="/login">LOG IN</a>{% endif %}</span>{% endblock %}
+{% block content %}
+<section class="channel-detail">
+  <p class="eyebrow">{% if radio.owner_id %}USER CHANNEL // {{ radio.visibility | upper }}{% else %}PIXELWAVE CHANNEL{% endif %}</p>
+  <h1>{{ radio.name }}<span class="cursor">_</span></h1>
+  <p>{{ radio.description }}</p>
+  <p class="tags">{% for tag in radio.tags %}#{{ tag }} {% endfor %}</p>
+  <p class="muted">{{ radio.track_count }} tracks · Jamendo {{ radio.jamendo_track_count }} · Audius {{ radio.audius_track_count }}{% if radio.owner_id %} · by {{ radio.owner.display_name }}{% endif %}</p>
+  {% if radio.owner_id %}<div class="channel-rating" data-radio-id="{{ radio.id }}"><button data-channel-vote="1">+ <span>{{ radio.likes }}</span></button><button data-channel-vote="-1">− <span>{{ radio.dislikes }}</span></button><span>Rating <strong>{{ '%.3f' | format(radio.overall_rating) }}</strong></span></div>{% endif %}
+  <button class="station detail-tuner" data-radio="{{ radio.slug }}" data-name="{{ radio.name }}"><span class="station-top"><span class="station-number">PLAY CHANNEL</span><i></i></span><strong>Start listening</strong><small>Programming music for coding and deep focus.</small></button>
+</section>
+<section class="player" id="player" hidden><img id="cover" alt="Album cover"><div class="track-copy"><span id="station-name"></span><strong id="track-name">Select a station</strong><a id="artist" target="_blank" rel="noopener"></a></div><button id="toggle" aria-label="Play or pause">▶</button><button id="next" aria-label="Next track">NEXT</button><div class="votes"><button id="like">+ <span>0</span></button><button id="dislike">− <span>0</span></button></div><input id="volume" aria-label="Volume" type="range" min="0" max="1" step="0.05" value="0.8"><a id="license" target="_blank" rel="noopener">LICENSE</a></section>
+{% endblock %}
+{% block scripts %}<script src="/static/player.js?v=20260905"></script>{% if radio.owner_id %}<script src="/static/user-channels.js?v=20260905"></script>{% endif %}{% endblock %}

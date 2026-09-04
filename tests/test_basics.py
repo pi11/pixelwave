@@ -29,6 +29,7 @@ def test_core_routes_are_registered():
     paths = {route.path for route in router.routes}
     assert "/" in paths
     assert "/api/radios/{slug}/next" in paths
+    assert "/channels/{slug}" in paths
     assert "/admin" in paths
     assert "/health" in paths
     assert "/api/tracks/{track_id}/vote" in paths

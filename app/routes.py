@@ -35,6 +35,17 @@ def _slug(value: str) -> str:
     return re.sub(r"[^a-z0-9]+", "-", value.lower()).strip("-")
 
 
+async def _accessible_radio(request: Request, slug: str) -> Radio | None:
+    radio = await Radio.get_or_none(slug=slug, enabled=True).prefetch_related("owner")
+    if not radio:
+        return None
+    if radio.owner_id is not None and radio.visibility == "hidden":
+        user = await current_user(request)
+        if not user or user.id != radio.owner_id:
+            return None
+    return radio
+
+
 @router.get("/", response_class=HTMLResponse)
 async def home(request: Request):
     radios = await Radio.filter(enabled=True, owner_id=None).order_by("name")
@@ -43,15 +54,26 @@ async def home(request: Request):
     )
 
 
+@router.get("/channels/{slug}", response_class=HTMLResponse)
+async def channel_page(request: Request, slug: str):
+    radio = await _accessible_radio(request, slug)
+    if not radio:
+        raise HTTPException(404, "Channel not found")
+    user = await current_user(request)
+    radio.track_count = await radio.tracks.all().count()
+    radio.jamendo_track_count = await radio.tracks.filter(provider="jamendo").count()
+    radio.audius_track_count = await radio.tracks.filter(provider="audius").count()
+    radio.overall_rating = round(wilson_score(radio.likes, radio.dislikes), 6)
+    return templates.TemplateResponse(
+        request, "channel.html", {"radio": radio, "user": user}
+    )
+
+
 @router.get("/api/radios/{slug}/next")
 async def radio_next(request: Request, slug: str):
-    radio = await Radio.get_or_none(slug=slug, enabled=True)
+    radio = await _accessible_radio(request, slug)
     if not radio:
         raise HTTPException(404, "Radio not found")
-    if radio.owner_id is not None and radio.visibility == "hidden":
-        user = await current_user(request)
-        if not user or user.id != radio.owner_id:
-            raise HTTPException(404, "Radio not found")
     try:
         track = await next_track(radio)
     except (*CATALOG_ERRORS, httpx.HTTPError) as exc:
