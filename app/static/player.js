@@ -74,6 +74,7 @@ async function vote(value) {
   $("dislike").querySelector("span").textContent = result.dislikes;
   $("like").classList.toggle("selected", result.vote === 1);
   $("dislike").classList.toggle("selected", result.vote === -1);
+  if (value === -1) await loadTrack();
 }
 $("like").addEventListener("click", () => vote(1));
 $("dislike").addEventListener("click", () => vote(-1));

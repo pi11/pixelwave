@@ -74,8 +74,16 @@ async def radio_next(request: Request, slug: str):
     radio = await _accessible_radio(request, slug)
     if not radio:
         raise HTTPException(404, "Radio not found")
+    user = await current_user(request)
+    raw_voter_id = request.cookies.get("pixelwave_voter")
     try:
-        track = await next_track(radio)
+        voter_id = UUID(raw_voter_id) if raw_voter_id else None
+    except ValueError:
+        voter_id = None
+    try:
+        track = await next_track(
+            radio, user_id=user.id if user else None, voter_id=voter_id
+        )
     except (*CATALOG_ERRORS, httpx.HTTPError) as exc:
         raise HTTPException(502, str(exc)) from exc
     if not track:
@@ -107,11 +115,17 @@ async def vote_track(request: Request, track_id: int, vote: VoteInput):
     except ValueError:
         voter_id = uuid4()
 
+    user = await current_user(request)
     async with in_transaction():
         track = await Track.filter(id=track_id).select_for_update().first()
         if not track:
             raise HTTPException(404, "Track not found")
-        existing = await TrackVote.get_or_none(track_id=track.id, voter_id=voter_id)
+        existing = await TrackVote.get_or_none(track_id=track.id, user_id=user.id) if user else None
+        if not existing:
+            existing = await TrackVote.get_or_none(track_id=track.id, voter_id=voter_id)
+        if existing and user and existing.user_id is None:
+            existing.user_id = user.id
+            await existing.save(update_fields=["user_id", "updated_at"])
         if existing and existing.value != vote.value:
             if existing.value == 1:
                 track.likes -= 1
@@ -120,9 +134,13 @@ async def vote_track(request: Request, track_id: int, vote: VoteInput):
             existing.value = vote.value
             await existing.save(update_fields=["value", "updated_at"])
         elif not existing:
-            await TrackVote.create(track_id=track.id, voter_id=voter_id, value=vote.value)
+            await TrackVote.create(
+                track_id=track.id,
+                voter_id=voter_id,
+                user_id=user.id if user else None,
+                value=vote.value,
+            )
         else:
-            user = await current_user(request)
             if user:
                 favorites = await favorites_radio(user)
                 if vote.value == 1:

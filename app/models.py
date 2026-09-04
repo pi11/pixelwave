@@ -80,13 +80,16 @@ class TrackVote(models.Model):
         "models.Track", related_name="votes", on_delete=fields.CASCADE
     )
     voter_id = fields.UUIDField()
+    user: fields.ForeignKeyNullableRelation[User] = fields.ForeignKeyField(
+        "models.User", related_name="track_votes", null=True, on_delete=fields.CASCADE
+    )
     value = fields.SmallIntField()
     created_at = fields.DatetimeField(auto_now_add=True)
     updated_at = fields.DatetimeField(auto_now=True)
 
     class Meta:
         table = "track_votes"
-        unique_together = (("track", "voter_id"),)
+        unique_together = (("track", "voter_id"), ("track", "user"))
 
 
 class RadioVote(models.Model):
