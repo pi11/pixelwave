@@ -1,5 +1,6 @@
 from app.auth import valid_credentials
 from app.config import settings
+from app.jamendo import _is_instrumental
 from app.main import app
 from app.ratings import wilson_score
 from app.routes import _slug, _words, router
@@ -32,3 +33,10 @@ def test_wilson_score_rewards_confident_positive_votes():
     assert wilson_score(0, 0) == 0
     assert wilson_score(10, 0) > wilson_score(1, 0)
     assert wilson_score(8, 2) > wilson_score(5, 5)
+
+
+def test_instrumental_track_classification_is_strict():
+    assert _is_instrumental({"musicinfo": {"vocalinstrumental": "instrumental"}})
+    assert not _is_instrumental({"musicinfo": {"vocalinstrumental": "vocal"}})
+    assert not _is_instrumental({"musicinfo": {}})
+    assert not _is_instrumental({})

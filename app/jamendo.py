@@ -16,6 +16,15 @@ class JamendoError(RuntimeError):
 
 
 async def refresh_radio(radio: Radio, *, force: bool = False) -> int:
+    if radio.instrumental:
+        cached_non_instrumentals = [
+            track
+            for track in await radio.tracks.all()
+            if not _is_instrumental(track.raw_data)
+        ]
+        if cached_non_instrumentals:
+            await radio.tracks.remove(*cached_non_instrumentals)
+
     count = await radio.tracks.all().count()
     fresh_after = datetime.now(UTC) - timedelta(hours=settings.track_cache_ttl_hours)
     if not force and radio.last_synced_at:
@@ -60,6 +69,8 @@ async def refresh_radio(radio: Radio, *, force: bool = False) -> int:
                 offset = 0
                 break
             for item in results:
+                if radio.instrumental and not _is_instrumental(item):
+                    continue
                 track, _ = await Track.update_or_create(
                     jamendo_id=int(item["id"]), defaults=_track_defaults(item)
                 )
@@ -79,6 +90,11 @@ async def refresh_radio(radio: Radio, *, force: bool = False) -> int:
     radio.sync_offset = offset
     await radio.save(update_fields=["last_synced_at", "sync_offset"])
     return await radio.tracks.all().count()
+
+
+def _is_instrumental(item: dict) -> bool:
+    musicinfo = item.get("musicinfo")
+    return isinstance(musicinfo, dict) and musicinfo.get("vocalinstrumental") == "instrumental"
 
 
 def _track_defaults(item: dict) -> dict:
