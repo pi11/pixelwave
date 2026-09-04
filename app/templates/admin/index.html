@@ -11,7 +11,7 @@
   <label>Tags, comma-separated<input name="tags" value="{{ radio.tags | join(', ') }}" required></label>
   <label>Speeds<input name="speeds" value="{{ radio.speeds | join(', ') }}" placeholder="low, medium"></label>
   <div class="checks"><label><input type="checkbox" name="instrumental" {% if radio.instrumental %}checked{% endif %}> instrumental</label><label><input type="checkbox" name="enabled" {% if radio.enabled %}checked{% endif %}> enabled</label></div>
-  <p class="muted">Cached: {{ radio.track_count }} tracks · synced {{ radio.last_synced_at or 'never' }}</p>
+  <p class="muted">Cached: {{ radio.track_count }} tracks · Jamendo: {{ radio.jamendo_track_count }} · Audius: {{ radio.audius_track_count }} · synced {{ radio.last_synced_at or 'never' }}</p>
   <button class="primary">Save</button>
 </form><div class="actions"><form method="post" action="/admin/radios/{{ radio.id }}/sync"><button>Sync now</button></form><form method="post" action="/admin/radios/{{ radio.id }}/delete" onsubmit="return confirm('Delete this station?')"><button class="danger">Delete</button></form></div></article>
 {% endfor %}

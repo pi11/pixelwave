@@ -7,6 +7,7 @@ from fastapi import APIRouter, Form, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
+from tortoise.expressions import Q
 from tortoise.functions import Count
 from tortoise.transactions import in_transaction
 
@@ -140,7 +141,19 @@ async def admin_logout(request: Request):
 @router.get("/admin", response_class=HTMLResponse)
 async def admin(request: Request):
     require_admin(request)
-    radios = await Radio.all().annotate(track_count=Count("tracks")).order_by("name")
+    radios = (
+        await Radio.all()
+        .annotate(
+            track_count=Count("tracks", distinct=True),
+            jamendo_track_count=Count(
+                "tracks", distinct=True, _filter=Q(tracks__provider="jamendo")
+            ),
+            audius_track_count=Count(
+                "tracks", distinct=True, _filter=Q(tracks__provider="audius")
+            ),
+        )
+        .order_by("name")
+    )
     return templates.TemplateResponse(request, "admin/index.html", {"radios": radios})
 
 
