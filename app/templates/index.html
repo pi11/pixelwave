@@ -28,13 +28,13 @@
 <section class="stations" aria-label="Stations">
 {% for radio in radios %}
   <article class="station-card">
-  <button class="station" data-radio="{{ radio.slug }}" data-name="{{ radio.name }}">
+  <button class="station" data-radio="{{ radio.slug }}" data-name="{{ radio.name }}" data-main-channel>
     <span class="station-top"><span class="station-number">CH-{{ '%02d' | format(loop.index) }}</span><i></i></span>
     <strong>{{ radio.name }}</strong>
     <small>{{ radio.description }}</small>
     <span class="tags">{% for tag in radio.tags %}#{{ tag }} {% endfor %}</span>
   </button>
-  <a class="channel-link" href="/channels/{{ radio.slug }}">OPEN / SHARE CHANNEL →</a>
+  <a class="channel-link" data-channel-hash="{{ radio.slug }}" href="/#{{ radio.slug }}">TUNE / SHARE LINK →</a>
   </article>
 {% else %}
   <p>No stations yet. <a href="/admin">Create one in admin</a>.</p>
@@ -54,4 +54,4 @@
 </section>
 <footer><span>Music provided by <a href="https://www.jamendo.com" target="_blank" rel="noopener">Jamendo</a> and <a href="https://audius.co" target="_blank" rel="noopener">Audius</a>. Artists retain their rights. Non-commercial project.</span><span>Built by <a href="https://pi.webnova.one/" target="_blank" rel="noopener">Webii Lab</a> // pixelwave.dev</span></footer>
 {% endblock %}
-{% block scripts %}<script src="/static/player.js?v=20260905"></script>{% endblock %}
+{% block scripts %}<script src="/static/player.js?v=20260905.2"></script>{% endblock %}

@@ -28,14 +28,39 @@ async function loadTrack(autoplay = true) {
   }
 }
 
-document.querySelectorAll(".station").forEach((button) => button.addEventListener("click", async () => {
+async function tune(button, autoplay = true, updateHash = false) {
   document.querySelectorAll(".station").forEach(x => x.classList.remove("active"));
   button.classList.add("active");
   radio = button.dataset.radio;
   $("station-name").textContent = button.dataset.name;
   $("player").hidden = false;
-  await loadTrack();
+  if (updateHash) history.replaceState(null, "", `#${encodeURIComponent(radio)}`);
+  await loadTrack(autoplay);
+}
+
+document.querySelectorAll(".station").forEach((button) => button.addEventListener("click", () => {
+  tune(button, true, button.hasAttribute("data-main-channel"));
 }));
+
+document.querySelectorAll("[data-channel-hash]").forEach((link) => link.addEventListener("click", (event) => {
+  event.preventDefault();
+  const button = [...document.querySelectorAll(".station")].find(
+    candidate => candidate.dataset.radio === link.dataset.channelHash
+  );
+  if (button) tune(button, true, true);
+}));
+
+function tuneFromHash() {
+  const slug = decodeURIComponent(location.hash.slice(1));
+  if (!slug) return;
+  const button = [...document.querySelectorAll(".station")].find(
+    candidate => candidate.dataset.radio === slug
+  );
+  if (button && button.dataset.radio !== radio) tune(button, false, false);
+}
+
+window.addEventListener("hashchange", tuneFromHash);
+tuneFromHash();
 $("toggle").addEventListener("click", () => audio.paused ? audio.play() : audio.pause());
 $("next").addEventListener("click", () => loadTrack());
 async function vote(value) {
