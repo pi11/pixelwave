@@ -14,6 +14,20 @@ A small non-commercial programming radio built with FastAPI, Tortoise ORM, HTMX 
 
 Open <http://127.0.0.1:8000>. Admin is at `/admin`.
 
+## Telegram login
+
+Set `TELEGRAM_BOT_TOKEN`, `TELEGRAM_BOT_USERNAME`, `TELEGRAM_WEBHOOK_SECRET`, and
+`PUBLIC_BASE_URL` in `.env`, then register the webhook once:
+
+```bash
+.venv/bin/python -m app.telegram
+```
+
+The bot responds to private messages with a reusable login link that expires after one hour.
+Logged-in users can create public or hidden channels at `/user-channels`. User channels sync only
+when created or edited and cache at most 250 tracks from Jamendo plus 250 from Audius. Public user
+channels can be played and rated by anyone; hidden channels are accessible only to their owner.
+
 ## Storage and licensing
 
 Every provider API response used by a station is upserted into `tracks`, including provider identity, attribution, license URL, and the original response. The station-to-track relationship, pagination cursor, votes, and play counters are persisted too. Global provider track IDs and station relationships are deduplicated. The configured track-cache target applies independently to each provider, so the default permits 1,000 Jamendo and 1,000 Audius tracks per station. Audius API access is optional for public reads; set `AUDIUS_API_KEY` for higher rate limits.

@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block robots %}noindex,nofollow{% endblock %}
+{% block title %}Telegram login · Pixelwave Radio{% endblock %}
+{% block nav %}<a href="/user-channels">USER CHANNELS</a>{% endblock %}
+{% block content %}
+<section class="panel narrow">
+  <p class="eyebrow">USER ACCESS</p><h1>Log in with Telegram</h1>
+  <p class="muted">Open the Pixelwave bot and send <strong>/start</strong>. It will reply with a reusable login link valid for one hour.</p>
+  {% if bot_url %}<a class="button primary" href="{{ bot_url }}" target="_blank" rel="noopener">OPEN TELEGRAM BOT</a>{% else %}<p class="error">Telegram bot username is not configured.</p>{% endif %}
+</section>
+{% endblock %}

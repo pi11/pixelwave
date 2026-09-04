@@ -14,7 +14,7 @@ class JamendoError(RuntimeError):
 
 
 async def refresh_radio(radio: Radio, *, force: bool = False) -> int:
-    cache_target = settings.track_cache_target
+    cache_target = 250 if radio.owner_id else settings.track_cache_target
     if radio.instrumental:
         cached_non_instrumentals = [
             track

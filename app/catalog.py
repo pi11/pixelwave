@@ -24,7 +24,8 @@ async def refresh_radio(radio: Radio, *, force: bool = False) -> int:
 
 
 async def next_track(radio: Radio) -> Track | None:
-    await refresh_radio(radio)
+    if radio.owner_id is None:
+        await refresh_radio(radio)
     query = radio.tracks.all()
     count = await query.count()
     if not count:

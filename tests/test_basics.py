@@ -7,6 +7,8 @@ from app.jamendo import _is_instrumental
 from app.main import app
 from app.ratings import wilson_score
 from app.routes import _slug, _words, router
+from app.user_auth import hash_login_token
+from app.user_routes import router as user_router
 
 
 def test_tag_normalization():
@@ -30,6 +32,17 @@ def test_core_routes_are_registered():
     assert "/admin" in paths
     assert "/health" in paths
     assert "/api/tracks/{track_id}/vote" in paths
+    user_paths = {route.path for route in user_router.routes}
+    assert "/user-channels" in user_paths
+    assert "/telegram/webhook" in user_paths
+    assert "/api/radios/{radio_id}/vote" in user_paths
+
+
+def test_login_tokens_are_hashed_deterministically():
+    token_hash = hash_login_token("secret-login-token")
+    assert token_hash == hash_login_token("secret-login-token")
+    assert token_hash != "secret-login-token"
+    assert len(token_hash) == 64
 
 
 def test_wilson_score_rewards_confident_positive_votes():

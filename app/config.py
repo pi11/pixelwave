@@ -8,6 +8,10 @@ class Settings(BaseSettings):
     database_url: str = "postgres://pradio@localhost:5432/pradio"
     jamendo_client_id: str
     audius_api_key: str = ""
+    telegram_bot_token: str = ""
+    telegram_bot_username: str = ""
+    telegram_webhook_secret: str = ""
+    public_base_url: str = "https://pixelwave.dev"
     secret_key: str
     admin_username: str = "admin"
     admin_password: str

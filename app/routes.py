@@ -14,8 +14,10 @@ from tortoise.transactions import in_transaction
 from app.auth import require_admin, valid_credentials
 from app.catalog import ERRORS as CATALOG_ERRORS
 from app.catalog import next_track, refresh_radio
+from app.config import settings
 from app.models import Radio, Track, TrackVote
 from app.ratings import wilson_score
+from app.user_auth import current_user
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
@@ -35,15 +37,21 @@ def _slug(value: str) -> str:
 
 @router.get("/", response_class=HTMLResponse)
 async def home(request: Request):
-    radios = await Radio.filter(enabled=True).order_by("name")
-    return templates.TemplateResponse(request, "index.html", {"radios": radios})
+    radios = await Radio.filter(enabled=True, owner_id=None).order_by("name")
+    return templates.TemplateResponse(
+        request, "index.html", {"radios": radios, "user": await current_user(request)}
+    )
 
 
 @router.get("/api/radios/{slug}/next")
-async def radio_next(slug: str):
+async def radio_next(request: Request, slug: str):
     radio = await Radio.get_or_none(slug=slug, enabled=True)
     if not radio:
         raise HTTPException(404, "Radio not found")
+    if radio.owner_id is not None and radio.visibility == "hidden":
+        user = await current_user(request)
+        if not user or user.id != radio.owner_id:
+            raise HTTPException(404, "Radio not found")
     try:
         track = await next_track(radio)
     except (*CATALOG_ERRORS, httpx.HTTPError) as exc:
@@ -112,7 +120,12 @@ def _vote_response(track: Track, voter_id: UUID, value: int) -> JSONResponse:
         }
     )
     response.set_cookie(
-        "pixelwave_voter", str(voter_id), max_age=31_536_000, httponly=True, samesite="lax"
+        "pixelwave_voter",
+        str(voter_id),
+        max_age=31_536_000,
+        httponly=True,
+        samesite="lax",
+        secure=settings.public_base_url.startswith("https://"),
     )
     return response
 
@@ -142,7 +155,7 @@ async def admin_logout(request: Request):
 async def admin(request: Request):
     require_admin(request)
     radios = (
-        await Radio.all()
+        await Radio.filter(owner_id=None)
         .annotate(
             track_count=Count("tracks", distinct=True),
             jamendo_track_count=Count(
@@ -196,7 +209,7 @@ async def edit_radio(
     enabled: bool = Form(False),
 ):
     require_admin(request)
-    radio = await Radio.get_or_none(id=radio_id)
+    radio = await Radio.get_or_none(id=radio_id, owner_id=None)
     if not radio:
         raise HTTPException(404)
     parsed_tags = _words(tags)
@@ -222,7 +235,7 @@ async def edit_radio(
 @router.post("/admin/radios/{radio_id}/sync")
 async def sync_radio(request: Request, radio_id: int):
     require_admin(request)
-    radio = await Radio.get_or_none(id=radio_id)
+    radio = await Radio.get_or_none(id=radio_id, owner_id=None)
     if not radio:
         raise HTTPException(404)
     await refresh_radio(radio, force=True)
@@ -232,7 +245,7 @@ async def sync_radio(request: Request, radio_id: int):
 @router.post("/admin/radios/{radio_id}/delete")
 async def delete_radio(request: Request, radio_id: int):
     require_admin(request)
-    await Radio.filter(id=radio_id).delete()
+    await Radio.filter(id=radio_id, owner_id=None).delete()
     return RedirectResponse("/admin", status_code=303)
 
 
