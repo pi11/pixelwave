@@ -53,7 +53,7 @@ async def _unique_slug(name: str, user_id: int) -> str:
 @router.get("/login", response_class=HTMLResponse)
 async def login(request: Request):
     if await current_user(request):
-        return RedirectResponse("/user-channels", status_code=303)
+        return RedirectResponse("/profile", status_code=303)
     bot_url = (
         f"https://t.me/{quote(settings.telegram_bot_username.lstrip('@'))}"
         if settings.telegram_bot_username
@@ -75,7 +75,7 @@ async def telegram_login(request: Request, token: str):
     if expires_at <= datetime.now(UTC):
         raise HTTPException(401, "Login link expired")
     request.session["user_id"] = login_token.user_id
-    return RedirectResponse("/user-channels", status_code=303)
+    return RedirectResponse("/profile", status_code=303)
 
 
 @router.post("/logout")
@@ -132,13 +132,8 @@ async def telegram_webhook(request: Request):
 @router.get("/user-channels", response_class=HTMLResponse)
 async def user_channels(request: Request):
     user = await current_user(request)
-    favorites = await favorites_radio(user) if user else None
-    access = Q(visibility="public")
-    if user:
-        access |= Q(owner_id=user.id)
     radios = (
-        await Radio.filter(owner_id__not_isnull=True)
-        .filter(access)
+        await Radio.filter(owner_id__not_isnull=True, visibility="public")
         .annotate(
             track_count=Count("tracks", distinct=True),
             jamendo_track_count=Count(
@@ -156,6 +151,34 @@ async def user_channels(request: Request):
     return templates.TemplateResponse(
         request,
         "user/channels.html",
+        {"radios": radios, "user": user},
+    )
+
+
+@router.get("/profile", response_class=HTMLResponse)
+async def profile(request: Request):
+    user = await current_user(request)
+    if not user:
+        return RedirectResponse("/login", status_code=303)
+    favorites = await favorites_radio(user)
+    radios = (
+        await Radio.filter(owner_id=user.id)
+        .annotate(
+            track_count=Count("tracks", distinct=True),
+            jamendo_track_count=Count(
+                "tracks", distinct=True, _filter=Q(tracks__provider="jamendo")
+            ),
+            audius_track_count=Count(
+                "tracks", distinct=True, _filter=Q(tracks__provider="audius")
+            ),
+        )
+        .order_by("name")
+    )
+    for radio in radios:
+        radio.overall_rating = _channel_rating(radio)
+    return templates.TemplateResponse(
+        request,
+        "user/profile.html",
         {"radios": radios, "user": user, "favorites": favorites},
     )
 
@@ -170,7 +193,7 @@ async def edit_profile(request: Request, display_name: str = Form()):
         raise HTTPException(400, "Username must be between 1 and 100 characters")
     user.display_name = display_name
     await user.save(update_fields=["display_name", "updated_at"])
-    return RedirectResponse("/user-channels", status_code=303)
+    return RedirectResponse("/profile", status_code=303)
 
 
 @router.post("/user-channels")
@@ -204,7 +227,7 @@ async def create_user_channel(
         await refresh_radio(radio, force=True)
     except (*CATALOG_ERRORS, httpx.HTTPError) as exc:
         raise HTTPException(502, f"Channel saved, but providers could not sync: {exc}") from exc
-    return RedirectResponse("/user-channels", status_code=303)
+    return RedirectResponse("/profile", status_code=303)
 
 
 @router.post("/user-channels/{radio_id}")
@@ -239,7 +262,7 @@ async def edit_user_channel(
         await refresh_radio(radio, force=True)
     except (*CATALOG_ERRORS, httpx.HTTPError) as exc:
         raise HTTPException(502, f"Channel saved, but providers could not sync: {exc}") from exc
-    return RedirectResponse("/user-channels", status_code=303)
+    return RedirectResponse("/profile", status_code=303)
 
 
 @router.post("/user-channels/{radio_id}/delete")
@@ -248,7 +271,7 @@ async def delete_user_channel(request: Request, radio_id: int):
     if radio.id == (await favorites_radio(user)).id:
         raise HTTPException(403, "Favorites cannot be deleted")
     await radio.delete()
-    return RedirectResponse("/user-channels", status_code=303)
+    return RedirectResponse("/profile", status_code=303)
 
 
 @router.post("/api/radios/{radio_id}/vote")
