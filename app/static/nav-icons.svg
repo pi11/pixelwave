@@ -4,4 +4,5 @@
   <symbol id="profile" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3"/><path d="M5 20c.7-4 3-6 7-6s6.3 2 7 6"/></symbol>
   <symbol id="login" viewBox="0 0 24 24"><path d="M13 5h6v14h-6M4 12h11M11 8l4 4-4 4"/></symbol>
   <symbol id="logout" viewBox="0 0 24 24"><path d="M11 5H5v14h6M20 12H9M16 8l4 4-4 4"/></symbol>
+  <symbol id="next" viewBox="0 0 24 24"><path d="M5 5l9 7-9 7zM16 5v14"/></symbol>
 </svg>
