@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero">
+  <div class="terminal-line"><span>pixelwave@radio:~$</span> tune --focus</div>
+  <p class="eyebrow">INDEPENDENT MUSIC // CONTINUOUS FOCUS</p>
+  <h1>Find your frequency<span class="cursor">_</span></h1>
+  <p>Distraction-free radio for coding, debugging, and shipping after dark.</p>
+</section>
+<div class="channel-header"><span>AVAILABLE CHANNELS</span><span>{{ radios | length }} SIGNALS FOUND</span></div>
+<section class="stations" aria-label="Stations">
+{% for radio in radios %}
+  <button class="station" data-radio="{{ radio.slug }}" data-name="{{ radio.name }}">
+    <span class="station-top"><span class="station-number">CH-{{ '%02d' | format(loop.index) }}</span><i></i></span>
+    <strong>{{ radio.name }}</strong>
+    <small>{{ radio.description }}</small>
+    <span class="tags">{% for tag in radio.tags %}#{{ tag }} {% endfor %}</span>
+  </button>
+{% else %}
+  <p>No stations yet. <a href="/admin">Create one in admin</a>.</p>
+{% endfor %}
+</section>
+<section class="player" id="player" hidden>
+  <img id="cover" alt="Album cover">
+  <div class="track-copy"><span id="station-name"></span><strong id="track-name">Select a station</strong><a id="artist" target="_blank" rel="noopener"></a></div>
+  <button id="toggle" aria-label="Play or pause">▶</button>
+  <button id="next" aria-label="Next track">NEXT</button>
+  <div class="votes" aria-label="Rate this track">
+    <button id="like" aria-label="Like this track">+ <span>0</span></button>
+    <button id="dislike" aria-label="Dislike this track">− <span>0</span></button>
+  </div>
+  <input id="volume" aria-label="Volume" type="range" min="0" max="1" step="0.05" value="0.8">
+  <a id="license" target="_blank" rel="noopener">LICENSE</a>
+</section>
+<footer><span>Music provided by <a href="https://www.jamendo.com" target="_blank" rel="noopener">Jamendo</a>. Artists retain their rights. Non-commercial project.</span><span>Built by <a href="https://pi.webnova.one/" target="_blank" rel="noopener">Webii Lab</a> // pixelwave.dev</span></footer>
+{% endblock %}
+{% block scripts %}<script src="/static/player.js"></script>{% endblock %}

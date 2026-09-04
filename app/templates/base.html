@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>{% block title %}Pixelwave Radio{% endblock %}</title>
+  <meta name="description" content="Independent music for programming, focus, and late-night builds.">
+  <meta name="theme-color" content="#080b0f">
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/app.css">
+  <script src="https://unpkg.com/htmx.org@2.0.8" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="Pixelwave Radio home">
+      <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
+      <span>PIXELWAVE<em>.DEV</em></span>
+    </a>
+    <span class="system-state"><i></i> STREAM NODE ONLINE</span>
+    {% block nav %}<span></span>{% endblock %}
+  </header>
+  <main>{% block content %}{% endblock %}</main>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

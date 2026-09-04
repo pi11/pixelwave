@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Control room · Pixelwave Radio{% endblock %}
+{% block nav %}<form method="post" action="/admin/logout"><button class="link">Log out</button></form>{% endblock %}
+{% block content %}
+<section class="admin-head"><div><p class="eyebrow">CONTROL ROOM</p><h1>Stations</h1></div></section>
+<section class="admin-grid">
+{% for radio in radios %}
+<article class="panel"><form method="post" action="/admin/radios/{{ radio.id }}">
+  <label>Name<input name="name" value="{{ radio.name }}" required></label>
+  <label>Description<input name="description" value="{{ radio.description }}"></label>
+  <label>Tags, comma-separated<input name="tags" value="{{ radio.tags | join(', ') }}" required></label>
+  <label>Speeds<input name="speeds" value="{{ radio.speeds | join(', ') }}" placeholder="low, medium"></label>
+  <div class="checks"><label><input type="checkbox" name="instrumental" {% if radio.instrumental %}checked{% endif %}> instrumental</label><label><input type="checkbox" name="enabled" {% if radio.enabled %}checked{% endif %}> enabled</label></div>
+  <p class="muted">Cached: {{ radio.track_count }} tracks · synced {{ radio.last_synced_at or 'never' }}</p>
+  <button class="primary">Save</button>
+</form><div class="actions"><form method="post" action="/admin/radios/{{ radio.id }}/sync"><button>Sync now</button></form><form method="post" action="/admin/radios/{{ radio.id }}/delete" onsubmit="return confirm('Delete this station?')"><button class="danger">Delete</button></form></div></article>
+{% endfor %}
+<article class="panel new"><h2>New station</h2><form method="post" action="/admin/radios">
+  <label>Name<input name="name" required></label><label>Description<input name="description"></label>
+  <label>Tags<input name="tags" placeholder="ambient, idm, electronic" required></label>
+  <label>Speeds<input name="speeds" placeholder="low, medium"></label>
+  <label><input type="checkbox" name="instrumental" checked> instrumental</label><button class="primary">Create</button>
+</form></article></section>
+{% endblock %}
