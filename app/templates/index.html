@@ -1,10 +1,27 @@
 {% extends "base.html" %}
+{% block title %}Programming Music Radio for Coding and Focus | Pixelwave{% endblock %}
+{% block description %}Listen to free programming music radio: instrumental ambient, electronic, lo-fi, and independent tracks selected for coding, deep work, and developer focus.{% endblock %}
+{% block structured_data %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "Pixelwave Radio",
+  "description": "Programming music radio for coding, deep work, and focus.",
+  "inLanguage": "en",
+  "audience": {
+    "@type": "Audience",
+    "audienceType": "Programmers and software developers"
+  }
+}
+</script>
+{% endblock %}
 {% block content %}
 <section class="hero">
   <div class="terminal-line"><span>pixelwave@radio:~$</span> tune --focus</div>
-  <p class="eyebrow">INDEPENDENT MUSIC // CONTINUOUS FOCUS</p>
-  <h1>Find your frequency<span class="cursor">_</span></h1>
-  <p>Distraction-free radio for coding, debugging, and shipping after dark.</p>
+  <p class="eyebrow">PROGRAMMING MUSIC // CONTINUOUS FOCUS</p>
+  <h1>Music for programming<span class="cursor">_</span></h1>
+  <p>Distraction-free coding music for programmers, deep work, debugging, and shipping after dark.</p>
 </section>
 <div class="channel-header"><span>AVAILABLE CHANNELS</span><span>{{ radios | length }} SIGNALS FOUND</span></div>
 <section class="stations" aria-label="Stations">

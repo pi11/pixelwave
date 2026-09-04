@@ -3,12 +3,22 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>{% block title %}Pixelwave Radio{% endblock %}</title>
-  <meta name="description" content="Independent music for programming, focus, and late-night builds.">
+  <title>{% block title %}Programming Music Radio for Coding and Focus | Pixelwave{% endblock %}</title>
+  <meta name="description" content="{% block description %}Free programming music radio with instrumental electronic, ambient, lo-fi, and independent music for coding, studying, and deep focus.{% endblock %}">
+  <meta name="keywords" content="programming music, coding music, music for programmers, focus music, developer radio, instrumental coding music, deep work music">
+  <meta name="robots" content="{% block robots %}index,follow,max-image-preview:large{% endblock %}">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Pixelwave Radio">
+  <meta property="og:title" content="Programming Music Radio for Coding and Focus">
+  <meta property="og:description" content="Independent instrumental music for programming, coding, studying, and deep focus.">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Programming Music Radio for Coding and Focus">
+  <meta name="twitter:description" content="Independent instrumental music for programming, coding, studying, and deep focus.">
   <meta name="theme-color" content="#080b0f">
   <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/static/app.css">
   <script src="https://unpkg.com/htmx.org@2.0.8" defer></script>
+  {% block structured_data %}{% endblock %}
 </head>
 <body>
   <header class="topbar">

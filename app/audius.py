@@ -56,7 +56,7 @@ def _license_url(item: dict) -> str:
 
 
 async def refresh_radio(radio: Radio, *, force: bool = False) -> int:
-    cache_target = max(1, settings.track_cache_target // 2)
+    cache_target = settings.track_cache_target
     if radio.instrumental:
         rejected = [
             track

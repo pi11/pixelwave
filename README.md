@@ -16,7 +16,7 @@ Open <http://127.0.0.1:8000>. Admin is at `/admin`.
 
 ## Storage and licensing
 
-Every provider API response used by a station is upserted into `tracks`, including provider identity, attribution, license URL, and the original response. The station-to-track relationship, pagination cursor, votes, and play counters are persisted too. Global provider track IDs and station relationships are deduplicated, and each station is pruned back to its configured limit. Audius API access is optional for public reads; set `AUDIUS_API_KEY` for higher rate limits.
+Every provider API response used by a station is upserted into `tracks`, including provider identity, attribution, license URL, and the original response. The station-to-track relationship, pagination cursor, votes, and play counters are persisted too. Global provider track IDs and station relationships are deduplicated. The configured track-cache target applies independently to each provider, so the default permits 1,000 Jamendo and 1,000 Audius tracks per station. Audius API access is optional for public reads; set `AUDIUS_API_KEY` for higher rate limits.
 
 Audio is deliberately not mirrored locally. Jamendo distinguishes streaming from downloading and artists may disable downloads. A future downloader must use the documented file endpoint only when `download_allowed` is true, preserve license and attribution metadata, remove unavailable works, and be reviewed against the license of each track and Jamendo's current API terms.
 
