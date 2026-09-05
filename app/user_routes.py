@@ -1,7 +1,7 @@
 import logging
 import secrets
 from datetime import UTC, datetime, timedelta
-from typing import Literal
+from typing import Annotated, Literal
 from urllib.parse import quote
 from uuid import UUID, uuid4
 
@@ -18,7 +18,7 @@ from app.catalog import refresh_radio
 from app.config import settings
 from app.models import LoginToken, Radio, RadioVote, User
 from app.ratings import wilson_score
-from app.routes import _slug, _words
+from app.routes import Speed, _slug, _words
 from app.user_auth import current_user, favorites_radio, hash_login_token
 
 router = APIRouter()
@@ -210,7 +210,7 @@ async def create_user_channel(
     name: str = Form(),
     description: str = Form(""),
     tags: str = Form(),
-    speeds: str = Form(""),
+    speeds: Annotated[list[Speed] | None, Form()] = None,
     instrumental: bool = Form(False),
     visibility: Literal["public", "hidden"] = Form("hidden"),
 ):
@@ -227,7 +227,7 @@ async def create_user_channel(
         slug=slug,
         description=description.strip(),
         tags=parsed_tags,
-        speeds=_words(speeds),
+        speeds=list(speeds or []),
         instrumental=instrumental,
         visibility=visibility,
     )
@@ -267,7 +267,7 @@ async def edit_user_channel(
     name: str = Form(),
     description: str = Form(""),
     tags: str = Form(),
-    speeds: str = Form(""),
+    speeds: Annotated[list[Speed] | None, Form()] = None,
     instrumental: bool = Form(False),
     visibility: Literal["public", "hidden"] = Form("hidden"),
 ):
@@ -280,7 +280,7 @@ async def edit_user_channel(
     radio.name = name.strip()
     radio.description = description.strip()
     radio.tags = parsed_tags
-    radio.speeds = _words(speeds)
+    radio.speeds = list(speeds or [])
     radio.instrumental = instrumental
     radio.visibility = visibility
     radio.last_synced_at = None

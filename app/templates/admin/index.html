@@ -10,7 +10,7 @@
   <label>Name<input name="name" value="{{ radio.name }}" required></label>
   <label>Description<input name="description" value="{{ radio.description }}"></label>
   <label>Tags, comma-separated<input name="tags" value="{{ radio.tags | join(', ') }}" required></label>
-  <label>Speeds<input name="speeds" value="{{ radio.speeds | join(', ') }}" placeholder="low, medium"></label>
+  <fieldset class="speed-options"><legend>Speeds</legend>{% for value, label in [('verylow', 'Very low'), ('low', 'Low'), ('medium', 'Medium'), ('high', 'High'), ('veryhigh', 'Very high')] %}<label><input type="checkbox" name="speeds" value="{{ value }}" {% if value in radio.speeds %}checked{% endif %}>{{ label }}</label>{% endfor %}</fieldset>
   <div class="checks"><label><input type="checkbox" name="instrumental" {% if radio.instrumental %}checked{% endif %}> instrumental</label><label><input type="checkbox" name="enabled" {% if radio.enabled %}checked{% endif %}> enabled</label></div>
   <p class="muted">Cached: {{ radio.track_count }} tracks · Jamendo: {{ radio.jamendo_track_count }} · Audius: {{ radio.audius_track_count }} · synced {{ radio.last_synced_at or 'never' }}</p>
   <button class="primary">Save</button>
@@ -19,7 +19,7 @@
 <article class="panel new"><h2>New station</h2><form method="post" action="/admin/radios">
   <label>Name<input name="name" required></label><label>Description<input name="description"></label>
   <label>Tags<input name="tags" placeholder="ambient, idm, electronic" required></label>
-  <label>Speeds<input name="speeds" placeholder="low, medium"></label>
+  <fieldset class="speed-options"><legend>Speeds</legend>{% for value, label in [('verylow', 'Very low'), ('low', 'Low'), ('medium', 'Medium'), ('high', 'High'), ('veryhigh', 'Very high')] %}<label><input type="checkbox" name="speeds" value="{{ value }}">{{ label }}</label>{% endfor %}</fieldset>
   <label><input type="checkbox" name="instrumental" checked> instrumental</label><button class="primary">Create</button>
 </form></article></section>
 {% endblock %}

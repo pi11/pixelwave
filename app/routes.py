@@ -1,5 +1,5 @@
 import re
-from typing import Literal
+from typing import Annotated, Literal
 from uuid import UUID, uuid4
 
 import httpx
@@ -25,6 +25,9 @@ templates = Jinja2Templates(directory="app/templates")
 
 class VoteInput(BaseModel):
     value: Literal[-1, 1]
+
+
+Speed = Literal["verylow", "low", "medium", "high", "veryhigh"]
 
 
 def _words(value: str) -> list[str]:
@@ -230,7 +233,7 @@ async def create_radio(
     name: str = Form(),
     description: str = Form(""),
     tags: str = Form(),
-    speeds: str = Form(""),
+    speeds: Annotated[list[Speed] | None, Form()] = None,
     instrumental: bool = Form(False),
 ):
     require_admin(request)
@@ -245,7 +248,7 @@ async def create_radio(
         slug=slug,
         description=description.strip(),
         tags=parsed_tags,
-        speeds=_words(speeds),
+        speeds=list(speeds or []),
         instrumental=instrumental,
     )
     return RedirectResponse("/admin", status_code=303)
@@ -258,7 +261,7 @@ async def edit_radio(
     name: str = Form(),
     description: str = Form(""),
     tags: str = Form(),
-    speeds: str = Form(""),
+    speeds: Annotated[list[Speed] | None, Form()] = None,
     instrumental: bool = Form(False),
     enabled: bool = Form(False),
 ):
@@ -269,13 +272,14 @@ async def edit_radio(
     parsed_tags = _words(tags)
     if not parsed_tags:
         raise HTTPException(400, "At least one tag is required")
+    parsed_speeds = list(speeds or [])
     query_changed = (
         radio.tags != parsed_tags
-        or radio.speeds != _words(speeds)
+        or radio.speeds != parsed_speeds
         or radio.instrumental != instrumental
     )
     radio.name, radio.description = name.strip(), description.strip()
-    radio.tags, radio.speeds = parsed_tags, _words(speeds)
+    radio.tags, radio.speeds = parsed_tags, parsed_speeds
     radio.instrumental, radio.enabled = instrumental, enabled
     if query_changed:
         await radio.tracks.clear()
