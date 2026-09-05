@@ -1,3 +1,4 @@
+import logging
 import secrets
 from datetime import UTC, datetime, timedelta
 from typing import Literal
@@ -22,6 +23,7 @@ from app.user_auth import current_user, favorites_radio, hash_login_token
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
+logger = logging.getLogger("app.user_channels")
 
 
 def _channel_rating(radio: Radio) -> float:
@@ -232,8 +234,28 @@ async def create_user_channel(
     try:
         track_count = await refresh_radio(radio, force=True)
     except (*CATALOG_ERRORS, httpx.HTTPError):
+        logger.exception(
+            "New user channel saved but sync failed: radio_id=%s owner_id=%s slug=%s "
+            "tags=%s speeds=%s instrumental=%s",
+            radio.id,
+            user.id,
+            radio.slug,
+            radio.tags,
+            radio.speeds,
+            radio.instrumental,
+        )
         return RedirectResponse("/profile?sync_error=1", status_code=303)
     if not track_count:
+        logger.warning(
+            "New user channel has no matching tracks: radio_id=%s owner_id=%s slug=%s "
+            "tags=%s speeds=%s instrumental=%s",
+            radio.id,
+            user.id,
+            radio.slug,
+            radio.tags,
+            radio.speeds,
+            radio.instrumental,
+        )
         return RedirectResponse("/profile?empty=1", status_code=303)
     return RedirectResponse("/profile", status_code=303)
 
@@ -269,8 +291,28 @@ async def edit_user_channel(
     try:
         track_count = await refresh_radio(radio, force=True)
     except (*CATALOG_ERRORS, httpx.HTTPError):
+        logger.exception(
+            "Edited user channel saved but sync failed: radio_id=%s owner_id=%s slug=%s "
+            "tags=%s speeds=%s instrumental=%s",
+            radio.id,
+            user.id,
+            radio.slug,
+            radio.tags,
+            radio.speeds,
+            radio.instrumental,
+        )
         return RedirectResponse("/profile?sync_error=1", status_code=303)
     if not track_count:
+        logger.warning(
+            "Edited user channel has no matching tracks: radio_id=%s owner_id=%s slug=%s "
+            "tags=%s speeds=%s instrumental=%s",
+            radio.id,
+            user.id,
+            radio.slug,
+            radio.tags,
+            radio.speeds,
+            radio.instrumental,
+        )
         return RedirectResponse("/profile?empty=1", status_code=303)
     return RedirectResponse("/profile", status_code=303)
 

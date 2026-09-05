@@ -94,6 +94,11 @@ async def test_catalog_refreshes_all_providers(monkeypatch):
 
     class Radio:
         tracks = Tracks()
+        id = 1
+        slug = "test"
+        tags = ("ambient",)
+        speeds = ()
+        instrumental = True
 
     monkeypatch.setattr(catalog.jamendo, "refresh_radio", refresh_jamendo)
     monkeypatch.setattr(catalog.audius, "refresh_radio", refresh_audius)
@@ -118,6 +123,11 @@ async def test_catalog_tolerates_one_provider_failure_with_no_matches(monkeypatc
 
     class Radio:
         tracks = Tracks()
+        id = 1
+        slug = "test"
+        tags = ("ambient",)
+        speeds = ()
+        instrumental = True
 
     monkeypatch.setattr(catalog.jamendo, "refresh_radio", failed)
     monkeypatch.setattr(catalog.audius, "refresh_radio", empty)

@@ -1,3 +1,4 @@
+import logging
 from datetime import UTC, datetime, timedelta
 from math import ceil
 
@@ -7,6 +8,7 @@ from app.config import settings
 from app.models import Radio, Track
 
 API_URL = "https://api.jamendo.com/v3.0/tracks/"
+logger = logging.getLogger("app.jamendo")
 
 
 class JamendoError(RuntimeError):
@@ -54,6 +56,9 @@ async def refresh_radio(radio: Radio, *, force: bool = False) -> int:
     pages = max(settings.refresh_pages, ceil(missing / settings.jamendo_page_size))
     pages = min(pages, ceil(cache_target / settings.jamendo_page_size))
     offset = radio.sync_offset
+    fetched_total = 0
+    accepted_total = 0
+    rejected_instrumental = 0
     async with httpx.AsyncClient(timeout=20, follow_redirects=True) as client:
         for _ in range(pages):
             params = {**base_params, "offset": offset}
@@ -64,11 +69,13 @@ async def refresh_radio(radio: Radio, *, force: bool = False) -> int:
             if headers.get("status") != "success":
                 raise JamendoError(headers.get("error_message") or "Jamendo request failed")
             results = payload.get("results", [])
+            fetched_total += len(results)
             if not results:
                 offset = 0
                 break
             for item in results:
                 if radio.instrumental and not _is_instrumental(item):
+                    rejected_instrumental += 1
                     continue
                 track, _ = await Track.update_or_create(
                     provider="jamendo",
@@ -76,6 +83,7 @@ async def refresh_radio(radio: Radio, *, force: bool = False) -> int:
                     defaults={"jamendo_id": int(item["id"]), **_track_defaults(item)},
                 )
                 await radio.tracks.add(track)
+                accepted_total += 1
             offset += len(results)
             if len(results) < settings.jamendo_page_size:
                 offset = 0
@@ -92,7 +100,23 @@ async def refresh_radio(radio: Radio, *, force: bool = False) -> int:
     radio.last_synced_at = datetime.now(UTC)
     radio.sync_offset = offset
     await radio.save(update_fields=["last_synced_at", "sync_offset"])
-    return await radio.tracks.filter(provider="jamendo").count()
+    final_count = await radio.tracks.filter(provider="jamendo").count()
+    logger.info(
+        "Provider sync completed: provider=jamendo radio_id=%s slug=%s tags=%s speeds=%s "
+        "instrumental=%s fetched=%s accepted=%s rejected_instrumental=%s cached=%s "
+        "next_offset=%s",
+        radio.id,
+        radio.slug,
+        radio.tags,
+        radio.speeds,
+        radio.instrumental,
+        fetched_total,
+        accepted_total,
+        rejected_instrumental,
+        final_count,
+        offset,
+    )
+    return final_count
 
 
 def _is_instrumental(item: dict) -> bool:

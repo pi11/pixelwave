@@ -1,3 +1,4 @@
+import logging
 from datetime import UTC, datetime, timedelta
 from math import ceil
 
@@ -7,6 +8,7 @@ from app.config import settings
 from app.models import Radio, Track
 
 API_URL = "https://api.audius.co/v1"
+logger = logging.getLogger("app.audius")
 
 
 class AudiusError(RuntimeError):
@@ -81,6 +83,11 @@ async def refresh_radio(radio: Radio, *, force: bool = False) -> int:
     offset = radio.audius_sync_offset
     headers = {"Authorization": f"Bearer {settings.audius_api_key}"} if settings.audius_api_key else {}
     query = " ".join(radio.tags)
+    fetched_total = 0
+    accepted_total = 0
+    rejected_unstreamable = 0
+    rejected_instrumental = 0
+    rejected_speed = 0
     async with httpx.AsyncClient(timeout=20, follow_redirects=True, headers=headers) as client:
         for _ in range(pages):
             response = await client.get(
@@ -93,14 +100,16 @@ async def refresh_radio(radio: Radio, *, force: bool = False) -> int:
             if not results:
                 offset = 0
                 break
+            fetched_total += len(results)
             for item in results:
-                if (
-                    item.get("is_stream_gated")
-                    or not item.get("is_streamable", True)
-                    or (radio.instrumental and not _is_instrumental(item))
-                ):
+                if item.get("is_stream_gated") or not item.get("is_streamable", True):
+                    rejected_unstreamable += 1
+                    continue
+                if radio.instrumental and not _is_instrumental(item):
+                    rejected_instrumental += 1
                     continue
                 if not _matches_speed(item, radio.speeds):
+                    rejected_speed += 1
                     continue
                 source_id = str(item["id"])
                 artwork = item.get("artwork") or {}
@@ -127,6 +136,7 @@ async def refresh_radio(radio: Radio, *, force: bool = False) -> int:
                     },
                 )
                 await radio.tracks.add(track)
+                accepted_total += 1
             offset += len(results)
             if len(results) < limit:
                 offset = 0
@@ -143,4 +153,22 @@ async def refresh_radio(radio: Radio, *, force: bool = False) -> int:
     radio.last_synced_at = datetime.now(UTC)
     radio.audius_sync_offset = offset
     await radio.save(update_fields=["last_synced_at", "audius_sync_offset"])
-    return await radio.tracks.filter(provider="audius").count()
+    final_count = await radio.tracks.filter(provider="audius").count()
+    logger.info(
+        "Provider sync completed: provider=audius radio_id=%s slug=%s query=%r speeds=%s "
+        "instrumental=%s fetched=%s accepted=%s rejected_unstreamable=%s "
+        "rejected_instrumental=%s rejected_speed=%s cached=%s next_offset=%s",
+        radio.id,
+        radio.slug,
+        query,
+        radio.speeds,
+        radio.instrumental,
+        fetched_total,
+        accepted_total,
+        rejected_unstreamable,
+        rejected_instrumental,
+        rejected_speed,
+        final_count,
+        offset,
+    )
+    return final_count

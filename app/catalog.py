@@ -1,3 +1,4 @@
+import logging
 from datetime import UTC, datetime
 from random import randrange
 from uuid import UUID
@@ -9,18 +10,42 @@ from app import audius, jamendo
 from app.models import Radio, Track, TrackVote
 
 ERRORS = (audius.AudiusError, jamendo.JamendoError)
+logger = logging.getLogger("app.catalog")
 
 
 async def refresh_radio(radio: Radio, *, force: bool = False) -> int:
     errors = []
     for refresh in (jamendo.refresh_radio, audius.refresh_radio):
+        provider = refresh.__module__.rsplit(".", 1)[-1]
         try:
             await refresh(radio, force=force)
         except (*ERRORS, httpx.HTTPError) as exc:
             errors.append(exc)
+            logger.exception(
+                "Provider sync failed: provider=%s radio_id=%s slug=%s tags=%s speeds=%s "
+                "instrumental=%s force=%s",
+                provider,
+                radio.id,
+                radio.slug,
+                radio.tags,
+                radio.speeds,
+                radio.instrumental,
+                force,
+            )
     count = await radio.tracks.all().count()
     if not count and len(errors) == 2:
         raise errors[0]
+    if not count:
+        logger.warning(
+            "Radio sync completed with no tracks: radio_id=%s slug=%s tags=%s speeds=%s "
+            "instrumental=%s provider_errors=%s",
+            radio.id,
+            radio.slug,
+            radio.tags,
+            radio.speeds,
+            radio.instrumental,
+            len(errors),
+        )
     return count
 
 
