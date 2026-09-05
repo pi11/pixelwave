@@ -1,10 +1,11 @@
 import re
+from random import shuffle
 from typing import Annotated, Literal
 from uuid import UUID, uuid4
 
 import httpx
 from fastapi import APIRouter, Form, HTTPException, Request
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 from tortoise.expressions import Q
@@ -49,11 +50,56 @@ async def _accessible_radio(request: Request, slug: str) -> Radio | None:
     return radio
 
 
+def _m3u_text(radio: Radio, tracks: list[Track]) -> str:
+    def clean(value: str) -> str:
+        return value.replace("\r", " ").replace("\n", " ").strip()
+
+    lines = ["#EXTM3U", f"#PLAYLIST:{clean(radio.name)}"]
+    for track in tracks:
+        if not track.audio_url.startswith(("http://", "https://")):
+            continue
+        lines.append(f"# Pixelwave source: {clean(track.share_url)}")
+        lines.append(f"# Pixelwave license: {clean(track.license_url)}")
+        lines.append(
+            f"#EXTINF:{track.duration},{clean(track.artist_name)} - {clean(track.name)}"
+        )
+        lines.append(clean(track.audio_url))
+    return "\n".join(lines) + "\n"
+
+
 @router.get("/", response_class=HTMLResponse)
 async def home(request: Request):
     radios = await Radio.filter(enabled=True, owner_id=None).order_by("name")
     return templates.TemplateResponse(
         request, "index.html", {"radios": radios, "user": await current_user(request)}
+    )
+
+
+@router.get("/channels/{slug}.m3u", response_class=PlainTextResponse)
+async def channel_playlist(slug: str):
+    radio = await Radio.get_or_none(slug=slug, enabled=True)
+    if not radio or (radio.owner_id is not None and radio.visibility != "public"):
+        raise HTTPException(404, "Channel not found")
+    if radio.owner_id is None:
+        try:
+            await refresh_radio(radio)
+        except (*CATALOG_ERRORS, httpx.HTTPError) as exc:
+            raise HTTPException(502, str(exc)) from exc
+    tracks = [
+        track
+        for track in await radio.tracks.all()
+        if track.audio_url.startswith(("http://", "https://"))
+    ]
+    if not tracks:
+        raise HTTPException(503, "No tracks available for this channel")
+    shuffle(tracks)
+    return PlainTextResponse(
+        _m3u_text(radio, tracks),
+        media_type="audio/x-mpegurl",
+        headers={
+            "Cache-Control": "no-store",
+            "Content-Disposition": f'inline; filename="{radio.slug}.m3u"',
+        },
     )
 
 

@@ -49,6 +49,20 @@ A small non-commercial programming radio built with FastAPI, Tortoise ORM, HTMX 
 
 Open <http://127.0.0.1:8000>. Admin is at `/admin`.
 
+## External players
+
+Every public main or user channel exposes a shuffled M3U playlist at
+`/channels/<slug>.m3u`. Audio URLs point directly to Jamendo or Audius; Pixelwave does not proxy
+or rebroadcast the audio. For example:
+
+```bash
+mpv --shuffle --loop-playlist=inf https://pixelwave.dev/channels/night-protocol.m3u
+```
+
+The playlist includes artist/title attribution and source and license comments. Hidden channels
+and Favorites do not expose M3U endpoints. Web-only features such as voting and personalized
+dislike filtering are not available in external players.
+
 ## Telegram login
 
 Set `TELEGRAM_BOT_TOKEN`, `TELEGRAM_BOT_USERNAME`, `TELEGRAM_WEBHOOK_SECRET`, and

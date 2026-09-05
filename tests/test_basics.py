@@ -1,3 +1,5 @@
+from types import SimpleNamespace
+
 import pytest
 from fastapi import HTTPException
 
@@ -9,7 +11,7 @@ from app.config import settings
 from app.jamendo import _is_instrumental
 from app.main import app
 from app.ratings import wilson_score
-from app.routes import _slug, _words, router
+from app.routes import _m3u_text, _slug, _words, router
 from app.user_auth import hash_login_token
 from app.user_routes import router as user_router
 from app.user_routes import vote_radio
@@ -34,6 +36,7 @@ def test_core_routes_are_registered():
     assert "/" in paths
     assert "/api/radios/{slug}/next" in paths
     assert "/channels/{slug}" in paths
+    assert "/channels/{slug}.m3u" in paths
     assert "/admin" in paths
     assert "/health" in paths
     assert "/api/tracks/{track_id}/vote" in paths
@@ -49,6 +52,23 @@ def test_login_tokens_are_hashed_deterministically():
     assert token_hash == hash_login_token("secret-login-token")
     assert token_hash != "secret-login-token"
     assert len(token_hash) == 64
+
+
+def test_m3u_contains_direct_audio_attribution_and_license():
+    radio = SimpleNamespace(name="Night\nProtocol")
+    track = SimpleNamespace(
+        audio_url="https://provider.example/audio.mp3",
+        share_url="https://provider.example/track",
+        license_url="https://creativecommons.org/licenses/by/4.0/",
+        duration=180,
+        artist_name="Neon Artist",
+        name="Midnight Build",
+    )
+    playlist = _m3u_text(radio, [track])
+    assert playlist.startswith("#EXTM3U\n#PLAYLIST:Night Protocol\n")
+    assert "#EXTINF:180,Neon Artist - Midnight Build" in playlist
+    assert "# Pixelwave license: https://creativecommons.org/licenses/by/4.0/" in playlist
+    assert playlist.endswith("https://provider.example/audio.mp3\n")
 
 
 def test_wilson_score_rewards_confident_positive_votes():

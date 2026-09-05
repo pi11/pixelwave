@@ -10,6 +10,7 @@
   <p>{{ radio.description }}</p>
   <p class="tags">{% for tag in radio.tags %}#{{ tag }} {% endfor %}</p>
   <p class="muted">{{ radio.track_count }} tracks · Jamendo {{ radio.jamendo_track_count }} · Audius {{ radio.audius_track_count }}{% if radio.owner_id %} · by {{ radio.owner.display_name }}{% endif %}</p>
+  {% if not radio.owner_id or radio.visibility == 'public' %}<p><a class="channel-link" href="/channels/{{ radio.slug }}.m3u">OPEN M3U PLAYLIST / MPV →</a></p>{% endif %}
   {% if radio.owner_id %}<div class="channel-rating" data-radio-id="{{ radio.id }}"><button data-channel-vote="1">+ <span>{{ radio.likes }}</span></button><button data-channel-vote="-1">− <span>{{ radio.dislikes }}</span></button><span>Rating <strong>{{ '%.3f' | format(radio.overall_rating) }}</strong></span></div>{% endif %}
   <button class="station detail-tuner" data-radio="{{ radio.slug }}" data-name="{{ radio.name }}"><span class="station-top"><span class="station-number">PLAY CHANNEL</span><i></i></span><strong>Start listening</strong><small>Programming music for coding and deep focus.</small></button>
 </section>

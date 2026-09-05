@@ -35,6 +35,7 @@
     <span class="tags">{% for tag in radio.tags %}#{{ tag }} {% endfor %}</span>
   </button>
   <a class="channel-link" data-channel-hash="{{ radio.slug }}" href="/#{{ radio.slug }}">TUNE / SHARE LINK →</a>
+  <a class="channel-link" href="/channels/{{ radio.slug }}.m3u">M3U / EXTERNAL PLAYER →</a>
   </article>
 {% else %}
   <p>No stations yet. <a href="/admin">Create one in admin</a>.</p>

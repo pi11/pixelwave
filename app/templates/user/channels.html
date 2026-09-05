@@ -8,6 +8,7 @@
 {% for radio in radios %}<article class="panel user-channel">
   <button class="station channel-tuner" data-radio="{{ radio.slug }}" data-name="{{ radio.name }}"><span class="station-top"><span class="station-number">PUBLIC</span><i></i></span><strong>{{ radio.name }}</strong><small>{{ radio.description }}</small><span class="tags">{% for tag in radio.tags %}#{{ tag }} {% endfor %}</span></button>
   <a class="channel-link" href="/channels/{{ radio.slug }}">OPEN / SHARE CHANNEL →</a>
+  <a class="channel-link" href="/channels/{{ radio.slug }}.m3u">M3U / EXTERNAL PLAYER →</a>
   <p class="muted">By {{ radio.owner.display_name }} · {{ radio.track_count }} tracks (Jamendo {{ radio.jamendo_track_count }}, Audius {{ radio.audius_track_count }})</p>
   <div class="channel-rating" data-radio-id="{{ radio.id }}"><button data-channel-vote="1">+ <span>{{ radio.likes }}</span></button><button data-channel-vote="-1">− <span>{{ radio.dislikes }}</span></button><span>Rating <strong>{{ '%.3f' | format(radio.overall_rating) }}</strong></span></div>
 </article>{% else %}<p class="muted">No public user channels yet.</p>{% endfor %}
