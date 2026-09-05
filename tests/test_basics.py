@@ -102,6 +102,28 @@ async def test_catalog_refreshes_all_providers(monkeypatch):
     assert calls == [("jamendo", True), ("audius", True)]
 
 
+async def test_catalog_tolerates_one_provider_failure_with_no_matches(monkeypatch):
+    async def failed(radio, *, force=False):
+        raise catalog.jamendo.JamendoError("temporarily unavailable")
+
+    async def empty(radio, *, force=False):
+        return 0
+
+    class Tracks:
+        def all(self):
+            return self
+
+        async def count(self):
+            return 0
+
+    class Radio:
+        tracks = Tracks()
+
+    monkeypatch.setattr(catalog.jamendo, "refresh_radio", failed)
+    monkeypatch.setattr(catalog.audius, "refresh_radio", empty)
+    assert await catalog.refresh_radio(Radio(), force=True) == 0
+
+
 async def test_channel_vote_rejects_invalid_values_before_database_access():
     with pytest.raises(HTTPException) as error:
         await vote_radio(None, 1, 0)

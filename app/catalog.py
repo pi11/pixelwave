@@ -19,7 +19,7 @@ async def refresh_radio(radio: Radio, *, force: bool = False) -> int:
         except (*ERRORS, httpx.HTTPError) as exc:
             errors.append(exc)
     count = await radio.tracks.all().count()
-    if not count and errors:
+    if not count and len(errors) == 2:
         raise errors[0]
     return count
 

@@ -156,7 +156,7 @@ async def user_channels(request: Request):
 
 
 @router.get("/profile", response_class=HTMLResponse)
-async def profile(request: Request):
+async def profile(request: Request, sync_error: bool = False, empty: bool = False):
     user = await current_user(request)
     if not user:
         return RedirectResponse("/login", status_code=303)
@@ -179,7 +179,13 @@ async def profile(request: Request):
     return templates.TemplateResponse(
         request,
         "user/profile.html",
-        {"radios": radios, "user": user, "favorites": favorites},
+        {
+            "radios": radios,
+            "user": user,
+            "favorites": favorites,
+            "sync_error": sync_error,
+            "empty": empty,
+        },
     )
 
 
@@ -224,9 +230,11 @@ async def create_user_channel(
         visibility=visibility,
     )
     try:
-        await refresh_radio(radio, force=True)
-    except (*CATALOG_ERRORS, httpx.HTTPError) as exc:
-        raise HTTPException(502, f"Channel saved, but providers could not sync: {exc}") from exc
+        track_count = await refresh_radio(radio, force=True)
+    except (*CATALOG_ERRORS, httpx.HTTPError):
+        return RedirectResponse("/profile?sync_error=1", status_code=303)
+    if not track_count:
+        return RedirectResponse("/profile?empty=1", status_code=303)
     return RedirectResponse("/profile", status_code=303)
 
 
@@ -259,9 +267,11 @@ async def edit_user_channel(
     await radio.tracks.clear()
     await radio.save()
     try:
-        await refresh_radio(radio, force=True)
-    except (*CATALOG_ERRORS, httpx.HTTPError) as exc:
-        raise HTTPException(502, f"Channel saved, but providers could not sync: {exc}") from exc
+        track_count = await refresh_radio(radio, force=True)
+    except (*CATALOG_ERRORS, httpx.HTTPError):
+        return RedirectResponse("/profile?sync_error=1", status_code=303)
+    if not track_count:
+        return RedirectResponse("/profile?empty=1", status_code=303)
     return RedirectResponse("/profile", status_code=303)
 
 

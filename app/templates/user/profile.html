@@ -4,6 +4,8 @@
 {% block nav %}<span class="user-nav"><a href="/"><svg><use href="/static/nav-icons.svg?v=1#radio"></use></svg>MAIN RADIO</a><a href="/user-channels"><svg><use href="/static/nav-icons.svg?v=1#channels"></use></svg>PUBLIC CHANNELS</a><a href="/profile"><svg><use href="/static/nav-icons.svg?v=1#profile"></use></svg>PROFILE</a><form method="post" action="/logout"><button class="link"><svg><use href="/static/nav-icons.svg?v=1#logout"></use></svg>LOG OUT</button></form></span>{% endblock %}
 {% block content %}
 <section class="admin-head"><div><p class="eyebrow">USER PROFILE</p><h1>{{ user.display_name }}</h1><p class="muted">Manage your username, Favorites, and personal channels.</p></div></section>
+{% if sync_error %}<p class="notice error">The channel was saved, but both music providers are temporarily unavailable. Edit and save it to retry synchronization.</p>{% endif %}
+{% if empty %}<p class="notice error">The channel was saved, but no tracks matched. Check tag spelling or relax the instrumental and speed filters, then edit and save it again.</p>{% endif %}
 <section class="profile-bar panel"><form method="post" action="/profile"><label>Username<input name="display_name" value="{{ user.display_name }}" maxlength="100" required></label><button class="primary">Update username</button></form></section>
 <section class="user-channel-grid">
 {% for radio in radios %}<article class="panel user-channel">
